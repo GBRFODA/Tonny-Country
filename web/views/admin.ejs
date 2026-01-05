@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administração | Grind System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Manrope', sans-serif; background-color: #050505; color: #e5e5e5; }
+        .glass { background: rgba(8, 8, 8, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .input-neural {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            width: 100%;
+            outline: none;
+            transition: 0.3s;
+        }
+        .input-neural:focus { border-color: #3B82F6; }
+    </style>
+</head>
+<body class="min-h-screen p-4 lg:p-8 bg-[#050505]">
+    
+    <div class="max-w-[1400px] mx-auto space-y-6">
+        
+        <header class="glass p-6 flex justify-between items-center rounded-xl">
+            <div>
+                <h1 class="font-mono text-lg tracking-widest text-red-500 font-bold uppercase flex items-center gap-2">
+                    <iconify-icon icon="solar:shield-warning-bold"></iconify-icon> Painel Administrativo
+                </h1>
+                <p class="text-[10px] text-neutral-500 font-mono uppercase mt-1">Gerenciamento de Usuários e Permissões</p>
+            </div>
+            <a href="/" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-white rounded text-[10px] font-mono uppercase tracking-widest transition-all flex items-center gap-2">
+                <iconify-icon icon="solar:arrow-left-linear"></iconify-icon> Voltar
+            </a>
+        </header>
+
+        <section class="glass p-8 rounded-xl overflow-hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xs font-mono text-neutral-400 uppercase tracking-widest">Base de Dados de Membros</h2>
+                <div class="text-[10px] font-mono text-neutral-600 bg-white/5 px-3 py-1 rounded">Total: <%= users.length %></div>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-white/5 text-[10px] font-mono text-neutral-500 uppercase">
+                            <th class="p-4 font-normal">Usuário / ID</th>
+                            <th class="p-4 font-normal">Passaporte</th>
+                            <th class="p-4 font-normal text-center">K / D / V</th>
+                            <th class="p-4 font-normal">Permissão</th>
+                            <th class="p-4 font-normal text-right">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm divide-y divide-white/5">
+                        <% users.forEach(u => { %>
+                        <tr class="hover:bg-white/[0.02] transition-colors group">
+                            <td class="p-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded bg-neutral-800 flex items-center justify-center text-xs font-mono text-neutral-500">
+                                        <%= u.nomeRp ? u.nomeRp.charAt(0).toUpperCase() : '?' %>
+                                    </div>
+                                    <div>
+                                        <div class="text-white font-medium"><%= u.nomeRp || 'Desconhecido' %></div>
+                                        <div class="text-[10px] font-mono text-neutral-600"><%= u.discordId %></div>
+                                    </div>
+                                </div>
+                            </td>
+                            
+                            <td class="p-4 text-neutral-400 font-mono text-xs">
+                                <%= u.passaporte || '---' %>
+                            </td>
+
+                            <td class="p-4 text-center">
+                                <div class="inline-flex items-center gap-2 bg-black/20 px-3 py-1 rounded border border-white/5">
+                                    <span class="text-green-500 text-xs font-mono" title="Kills"><%= u.kills %></span>
+                                    <span class="text-neutral-700">|</span>
+                                    <span class="text-red-500 text-xs font-mono" title="Mortes"><%= u.derrotas %></span>
+                                    <span class="text-neutral-700">|</span>
+                                    <span class="text-yellow-500 text-xs font-mono" title="Vitórias"><%= u.vitorias %></span>
+                                </div>
+                            </td>
+
+                            <td class="p-4">
+                                <% if(u.perm_level >= 3) { %> 
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-red-500/10 text-red-500 text-[10px] font-mono border border-red-500/20">
+                                        <iconify-icon icon="solar:crown-linear"></iconify-icon> ADMIN
+                                    </span> 
+                                <% } else if(u.perm_level == 2) { %> 
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-500/10 text-blue-500 text-[10px] font-mono border border-blue-500/20">
+                                        <iconify-icon icon="solar:shield-user-linear"></iconify-icon> GERENTE
+                                    </span> 
+                                <% } else { %> 
+                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded bg-neutral-800 text-neutral-500 text-[10px] font-mono border border-white/5">
+                                        <iconify-icon icon="solar:user-linear"></iconify-icon> MEMBRO
+                                    </span> 
+                                <% } %>
+                            </td>
+
+                            <td class="p-4 text-right">
+                                <div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button onclick="openRoleModal('<%= u.discordId %>', '<%= u.nomeRp %>', '<%= u.perm_level %>')" 
+                                            class="p-2 bg-blue-600/10 hover:bg-blue-600 hover:text-white text-blue-500 rounded transition-all" title="Editar Cargo">
+                                        <iconify-icon icon="solar:pen-new-square-linear"></iconify-icon>
+                                    </button>
+
+                                    <form action="/admin/ban" method="POST" onsubmit="return confirm('ATENÇÃO: Isso irá DELETAR todos os dados deste usuário e EXPULSÁ-LO do Discord. Tem certeza?');">
+                                        <input type="hidden" name="discordId" value="<%= u.discordId %>">
+                                        <button type="submit" class="p-2 bg-red-600/10 hover:bg-red-600 hover:text-white text-red-500 rounded transition-all" title="Banir Usuário">
+                                            <iconify-icon icon="solar:trash-bin-trash-linear"></iconify-icon>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <div id="roleModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center backdrop-blur-sm z-50 transition-opacity opacity-0">
+        <div class="glass p-6 rounded-xl w-full max-w-md shadow-2xl transform scale-95 transition-transform duration-300" id="modalContent">
+            
+            <div class="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                <h3 class="text-sm font-mono uppercase tracking-widest text-white">Editar Permissões</h3>
+                <button onclick="closeRoleModal()" class="text-neutral-500 hover:text-white transition-colors">
+                    <iconify-icon icon="solar:close-circle-linear" class="text-xl"></iconify-icon>
+                </button>
+            </div>
+
+            <p class="text-xs text-neutral-400 mb-4 font-mono">Usuário Alvo: <span id="modalUsername" class="text-blue-400 font-bold"></span></p>
+            
+            <form action="/admin/update-role" method="POST">
+                <input type="hidden" name="discordId" id="modalDiscordId">
+                
+                <div class="space-y-3 mb-6">
+                    <label class="flex items-center p-3 border border-white/10 rounded cursor-pointer hover:bg-white/5 transition-colors group">
+                        <input type="radio" name="newLevel" value="1" class="accent-blue-500">
+                        <div class="ml-3">
+                            <span class="block text-sm font-medium text-neutral-300 group-hover:text-white">Membro (Nível 1)</span>
+                            <span class="block text-[10px] text-neutral-600">Acesso padrão, sem painel.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center p-3 border border-blue-500/30 rounded cursor-pointer bg-blue-500/5 hover:bg-blue-500/10 transition-colors group">
+                        <input type="radio" name="newLevel" value="2" class="accent-blue-500">
+                        <div class="ml-3">
+                            <span class="block text-sm font-medium text-blue-400 group-hover:text-blue-300">Gerente (Nível 2)</span>
+                            <span class="block text-[10px] text-blue-500/60">Acesso a Logs, Criar Ação e Baús.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center p-3 border border-red-500/30 rounded cursor-pointer bg-red-500/5 hover:bg-red-500/10 transition-colors group">
+                        <input type="radio" name="newLevel" value="3" class="accent-red-500">
+                        <div class="ml-3">
+                            <span class="block text-sm font-medium text-red-400 group-hover:text-red-300">Administrador (Nível 3)</span>
+                            <span class="block text-[10px] text-red-500/60">Acesso TOTAL ao sistema.</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-white/10">
+                    <button type="button" onclick="closeRoleModal()" class="px-4 py-2 text-xs font-mono uppercase tracking-widest text-neutral-400 hover:text-white transition-colors">Cancelar</button>
+                    <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-mono uppercase tracking-widest shadow-[0_0_15px_rgba(37,99,235,0.3)] transition-all">
+                        Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('roleModal');
+        const modalContent = document.getElementById('modalContent');
+
+        function openRoleModal(id, name, level) {
+            document.getElementById('modalDiscordId').value = id;
+            document.getElementById('modalUsername').innerText = name;
+            
+            // Seleciona o radio button correto
+            const radios = document.getElementsByName('newLevel');
+            radios.forEach(r => {
+                if(r.value == level || (level > 3 && r.value == 3)) r.checked = true;
+                else r.checked = false;
+            });
+
+            // Animação de Entrada
+            modal.classList.remove('hidden');
+            // Timeout para permitir que o navegador renderize o 'block' antes de mudar a opacidade
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.classList.add('flex', 'opacity-100');
+                modalContent.classList.remove('scale-95');
+                modalContent.classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeRoleModal() {
+            // Animação de Saída
+            modal.classList.remove('opacity-100');
+            modal.classList.add('opacity-0');
+            modalContent.classList.remove('scale-100');
+            modalContent.classList.add('scale-95');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300); // Espera a transição CSS terminar
+        }
+
+        // Fechar ao clicar fora
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeRoleModal();
+        });
+    </script>
+</body>
+</html>

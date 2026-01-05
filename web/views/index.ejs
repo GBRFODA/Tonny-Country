@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grind System | Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Manrope', sans-serif; background-color: #050505; color: #e5e5e5; overflow-x: hidden; }
+        .grid-bg { background-image: linear-gradient(to right, rgba(59,130,246,0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(59,130,246,0.05) 1px, transparent 1px); background-size: 40px 40px; }
+        .glass { background: rgba(8, 8, 8, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .text-glow { text-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+        .beam-h { position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(to right, transparent, #3B82F6, transparent); opacity: 0.3; }
+        
+        .input-neural {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            width: 100%;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            outline: none;
+            transition: 0.3s;
+        }
+        .input-neural:focus { border-color: #3B82F6; box-shadow: 0 0 10px rgba(59, 130, 246, 0.2); }
+
+        /* Scrollbar */
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #3B82F6; border-radius: 2px; }
+    </style>
+</head>
+<body class="min-h-screen grid-bg p-4 lg:p-8">
+
+    <div class="max-w-[1400px] mx-auto space-y-6">
+        
+        <header class="glass p-6 flex flex-col md:flex-row justify-between items-center relative overflow-hidden">
+            <div class="beam-h"></div>
+            <div class="flex items-center gap-6">
+                <img src="https://i.ibb.co/M5ZMss8S/GRIND-LOGO-c-pia2.png" alt="Grind Logo" class="w-auto h-14 object-contain drop-shadow-[0_0_15px_rgba(59,130,246,0.6)]">
+                <div>
+                    <h1 class="font-mono text-sm tracking-[0.3em] uppercase">Grind<span class="text-blue-500">System</span></h1>
+                    <p class="text-[10px] text-neutral-500 uppercase tracking-widest font-mono">Painel Gestão v1.0</p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <iconify-icon icon="solar:clock-circle-linear" class="text-neutral-600 text-[10px]"></iconify-icon>
+                        <p class="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Licença: <span class="<%= corLicenca %> font-bold"><%= licenca %></span></p>
+                    </div>
+                </div>
+            </div>
+            <nav class="flex items-center gap-8 mt-6 md:mt-0 font-mono text-[10px] tracking-widest text-neutral-500">
+                <a href="/" class="text-white border-b border-blue-500 pb-1">DASHBOARD</a>
+                <a href="/ranking" class="hover:text-white transition-colors">RANKING</a>
+                <% if (user && user.isManager) { %> <a href="/logs" class="hover:text-white transition-colors">LOGS</a> <% } %>
+                <% if (user && user.isAdmin) { %> <a href="/admin" class="text-red-500 hover:text-red-400 transition-colors">ADMIN</a> <% } %>
+                <% if (user) { %>
+                    <div class="flex items-center gap-3 pl-6 border-l border-white/10">
+                        <img src="<%= user.avatar %>" class="w-6 h-6 rounded-full border border-white/20">
+                        <span class="text-white"><%= user.username %></span>
+                        <a href="/logout" class="text-red-500 hover:text-white ml-2">SAIR</a>
+                    </div>
+                <% } else { %>
+                    <a href="/auth/discord" class="px-4 py-2 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded flex items-center gap-2 transition-all"><iconify-icon icon="ic:baseline-discord"></iconify-icon> LOGIN</a>
+                <% } %>
+            </nav>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <div class="lg:col-span-12">
+                <section class="glass p-8 relative overflow-hidden group">
+                    <div class="absolute -right-10 -top-10 opacity-5 group-hover:opacity-10 transition-opacity duration-700">
+                        <iconify-icon icon="solar:wallet-money-bold" width="200" class="text-blue-500"></iconify-icon>
+                    </div>
+                    <h2 class="text-xs font-mono uppercase tracking-[0.2em] text-blue-400 mb-6 flex items-center gap-2">
+                        <iconify-icon icon="solar:chart-square-linear"></iconify-icon> 
+                        Resumo Financeiro da Organização
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+                        <div>
+                            <p class="text-[10px] font-mono uppercase text-neutral-500 mb-2">Faturamento Total</p>
+                            <p id="metric-faturamento" class="text-4xl lg:text-5xl font-light text-white text-glow transition-all">R$ 0,00</p>
+                            <p class="text-[10px] text-neutral-600 mt-1">Valor acumulado em caixa</p>
+                        </div>
+                        <div class="md:border-l border-white/5 md:pl-8">
+                            <p class="text-[10px] font-mono uppercase text-neutral-500 mb-2">Total de Vendas</p>
+                            <p id="metric-vendas-count" class="text-4xl lg:text-5xl font-light text-white transition-all">0</p>
+                            <p class="text-[10px] text-neutral-600 mt-1">Transações realizadas</p>
+                        </div>
+                        <div class="md:border-l border-white/5 md:pl-8">
+                            <p class="text-[10px] font-mono uppercase text-neutral-500 mb-2">Ticket Médio</p>
+                            <p id="metric-ticket" class="text-4xl lg:text-5xl font-light text-blue-400 transition-all">R$ 0,00</p>
+                            <p class="text-[10px] text-neutral-600 mt-1">Média por venda</p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="lg:col-span-4 space-y-6">
+                <section class="glass p-6 relative group">
+                    <div class="absolute top-0 left-0 w-[2px] h-full bg-blue-500"></div>
+                    <h2 class="text-xs font-mono uppercase tracking-[0.2em] text-blue-400 mb-4 flex items-center gap-2">
+                        <iconify-icon icon="solar:add-square-linear"></iconify-icon> Nova Operação
+                    </h2>
+                    <% if (user && user.isManager) { %>
+                        <form action="/acoes/criar" method="POST" class="space-y-3">
+                            
+                            <div>
+                                <label class="text-[10px] font-mono text-neutral-500 uppercase">Mundo</label>
+                                <select name="mundo" class="input-neural" style="background-color: #050505;" required>
+                                    <option value="Primário">Mundo Primário</option>
+                                    <option value="Secundário">Mundo Secundário</option>
+                                </select>
+                            </div>
+
+                            <div><label class="text-[10px] font-mono text-neutral-500 uppercase">Nome</label><input type="text" name="nome" class="input-neural" required></div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div><label class="text-[10px] font-mono text-neutral-500 uppercase">Vagas</label><input type="number" name="vagas" class="input-neural" required></div>
+                                <div><label class="text-[10px] font-mono text-neutral-500 uppercase">Horário</label><input type="time" name="horario" class="input-neural" required></div>
+                            </div>
+                            <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-mono text-xs uppercase tracking-widest rounded mt-2">Iniciar</button>
+                        </form>
+                    <% } else { %>
+                        <div class="flex flex-col items-center justify-center py-6 border border-white/5 rounded bg-white/5"><iconify-icon icon="solar:lock-keyhole-linear" class="text-2xl text-neutral-500"></iconify-icon><p class="text-[10px] font-mono text-neutral-400 uppercase text-center">Acesso Negado</p></div>
+                    <% } %>
+                </section>
+
+                <section class="glass p-8 relative">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-xs font-mono uppercase tracking-[0.2em] text-neutral-400">Operadores Ativos</h2>
+                        <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse shadow-[0_0_10px_#3b82f6]"></span>
+                    </div>
+                    <div id="ponto-container" class="space-y-4 custom-scroll" style="max-height: 200px; overflow-y: auto; padding-right: 10px;">
+                        <div class="text-neutral-600 font-mono text-[10px] uppercase text-center py-4">Sincronizando...</div>
+                    </div>
+                </section>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="glass p-6"><p class="text-[10px] font-mono uppercase text-neutral-500 mb-2">Abates</p><p id="metric-kills" class="text-3xl font-light text-glow">--</p></div>
+                    <div class="glass p-6"><p class="text-[10px] font-mono uppercase text-neutral-500 mb-2">Vitórias</p><p id="metric-acoes" class="text-3xl font-light">--</p></div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-8">
+                <section class="glass p-8 flex flex-col">
+                    <div class="flex justify-between items-center mb-8">
+                        <h2 class="text-xs font-mono uppercase tracking-[0.2em] text-neutral-400">Fluxo de Operações</h2>
+                    </div>
+                    
+                    <div id="sales-feed" class="flex-1 space-y-4 custom-scroll" style="max-height: 300px; overflow-y: auto; padding-right: 10px;"></div>
+                    
+                    <% if (user && user.isManager) { %>
+                    <div class="mt-8 border-t border-white/5 pt-6 flex justify-between items-center">
+                        <div class="flex gap-2"><span class="w-1 h-1 bg-blue-500"></span><span class="w-1 h-1 bg-neutral-800"></span></div>
+                        <a href="/logs" class="text-[10px] font-mono uppercase tracking-widest text-neutral-500 hover:text-white transition-colors">Logs Completos <iconify-icon icon="solar:arrow-right-linear" class="align-middle ml-2"></iconify-icon></a>
+                    </div>
+                    <% } %>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let lastPontoData = "";
+        let lastSalesData = "";
+
+        async function refreshDashboard() {
+            try {
+                const response = await fetch('/api/live-data');
+                const data = await response.json();
+
+                if(data.metrics) {
+                    document.getElementById('metric-kills').innerText = data.metrics.totalKills || 0;
+                    document.getElementById('metric-acoes').innerText = data.metrics.acoesGanhas || 0;
+                    
+                    const totalVendas = data.metrics.totalVendas || 0;
+                    const qtdVendas = data.metrics.qtdVendas || 0;
+                    const ticketMedio = qtdVendas > 0 ? (totalVendas / qtdVendas) : 0;
+
+                    document.getElementById('metric-faturamento').innerText = `R$ ${totalVendas.toLocaleString('pt-BR')}`;
+                    document.getElementById('metric-vendas-count').innerText = qtdVendas;
+                    document.getElementById('metric-ticket').innerText = `R$ ${ticketMedio.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                }
+
+                if(data.pontosAtivos) {
+                    const pontoHtml = data.pontosAtivos.length > 0 ? data.pontosAtivos.map(p => `
+                        <div class="flex items-center gap-4 p-4 bg-white/[0.02] border-l-2 border-blue-500">
+                            <img src="${p.avatarURL}" class="w-10 h-10 rounded-full border border-white/10 shadow-[0_0_10px_rgba(59,130,246,0.2)]">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-white">@${p.username}</p>
+                                <p class="text-[10px] font-mono text-blue-400 uppercase tracking-tighter">EM SERVIÇO: <span data-timer="${p.startTime}">00:00:00</span></p>
+                            </div>
+                        </div>`).join('') : '<p class="text-neutral-600 font-mono text-[10px] text-center py-4">SEM OPERADORES ATIVOS</p>';
+                    if (pontoHtml !== lastPontoData) { document.getElementById('ponto-container').innerHTML = pontoHtml; lastPontoData = pontoHtml; }
+                }
+
+                if(data.ultimasVendas) {
+                    const salesHtml = data.ultimasVendas.length > 0 ? data.ultimasVendas.map(v => `
+                        <div class="glass p-4 flex justify-between items-center group hover:bg-white/[0.02] transition-all">
+                            <div class="flex items-center gap-4">
+                                <img src="${v.avatarURL}" class="w-10 h-10 rounded border border-white/5 grayscale group-hover:grayscale-0 transition-all">
+                                <div>
+                                    <p class="text-[10px] font-mono text-neutral-500 uppercase">Operador: <span class="text-neutral-300">${v.username}</span></p>
+                                    <p class="text-sm font-medium text-white">${v.productName} <span class="text-neutral-500 text-xs">x${v.quantity}</span></p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-blue-500 font-mono text-sm tracking-tighter">+ R$ ${v.totalValue.toLocaleString('pt-BR')}</p>
+                                <p class="text-[9px] font-mono text-neutral-600 uppercase">${new Date(v.date).toLocaleTimeString()}</p>
+                            </div>
+                        </div>`).join('') : '<p class="text-neutral-600 font-mono text-center py-10">AGUARDANDO ATIVIDADE...</p>';
+                    if (salesHtml !== lastSalesData) { document.getElementById('sales-feed').innerHTML = salesHtml; lastSalesData = salesHtml; }
+                }
+            } catch (err) { console.error("Erro dashboard:", err); }
+        }
+        
+        setInterval(() => { document.querySelectorAll('[data-timer]').forEach(el => { const diff = Math.floor(Date.now() / 1000) - parseInt(el.dataset.timer); if(!isNaN(diff)) el.innerText = new Date(diff * 1000).toISOString().substr(11, 8); }); }, 1000);
+        setInterval(refreshDashboard, 5000);
+        refreshDashboard();
+    </script>
+</body>
+</html>

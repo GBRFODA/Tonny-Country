@@ -1,0 +1,25 @@
+{
+  "name": "grind-system-bot",
+  "version": "1.0.0",
+  "description": "Bot de sistema de vendas e ponto",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "better-sqlite3": "^11.0.0",
+    "body-parser": "^2.2.1",
+    "cors": "^2.8.5",
+    "discord.js": "^14.16.0",
+    "dotenv": "^16.6.1",
+    "ejs": "^3.1.10",
+    "express": "^5.2.1",
+    "express-session": "^1.18.2",
+    "passport": "^0.7.0",
+    "passport-discord": "^0.1.4"
+  },
+  "engines": {
+    "node": ">=16.9.0"
+  }
+}

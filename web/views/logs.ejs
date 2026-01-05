@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logs de Baú | Grind System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Manrope', sans-serif; background-color: #050505; color: #e5e5e5; }
+        .glass { background: rgba(8, 8, 8, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        
+        /* Estilo dos Inputs e Selects */
+        .input-filter, .select-filter {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            font-size: 10px;
+            padding: 4px 6px;
+            border-radius: 4px;
+            width: 100%;
+            outline: none;
+            font-family: 'JetBrains Mono', monospace;
+            appearance: none; /* Remove seta padrão do browser */
+        }
+        .select-filter {
+            background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23cccccc%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+            background-repeat: no-repeat;
+            background-position: right .7em top 50%;
+            background-size: .65em auto;
+            padding-right: 1.5em;
+        }
+        .input-filter:focus, .select-filter:focus { border-color: #3B82F6; background: rgba(255, 255, 255, 0.08); }
+        option { background-color: #1a1a1a; color: #fff; }
+
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #3B82F6; border-radius: 2px; }
+    </style>
+</head>
+<body class="min-h-screen p-4 lg:p-8">
+
+    <nav class="flex items-center gap-6 mb-8 text-[10px] font-mono tracking-widest text-neutral-500">
+        <a href="/" class="hover:text-white transition-colors">VOLTAR</a>
+        <span class="text-blue-500">LOGS DE BAÚ</span>
+    </nav>
+
+    <div class="mb-6 flex justify-between items-end">
+        <div>
+            <h1 class="text-2xl font-light text-white mb-1">Central de Monitoramento</h1>
+            <p class="text-xs text-neutral-500 font-mono">Visualizando logs em tempo real dos canais configurados.</p>
+        </div>
+        <div class="flex gap-2">
+            <span class="px-3 py-1 bg-white/5 rounded text-[10px] font-mono text-neutral-400">
+                STATUS: <span class="text-green-500">ONLINE</span>
+            </span>
+        </div>
+    </div>
+
+    <% 
+        let gridClass = 'grid-cols-1';
+        if (activeChannels.length === 2) gridClass = 'grid-cols-1 md:grid-cols-2';
+        if (activeChannels.length === 3) gridClass = 'grid-cols-1 md:grid-cols-3';
+    %>
+
+    <main class="grid <%= gridClass %> gap-6 h-[calc(100vh-150px)]">
+        
+        <% activeChannels.forEach((channelId, index) => { %>
+            <div class="glass flex flex-col h-full rounded-lg overflow-hidden border border-white/5">
+                <div class="p-3 border-b border-white/5 bg-white/[0.02]">
+                    <div class="flex justify-between items-center mb-3">
+                        <div class="flex items-center gap-2">
+                            <iconify-icon icon="solar:monitor-camera-bold" class="text-blue-500"></iconify-icon>
+                            <span class="text-xs font-mono font-bold text-white uppercase tracking-wider">Canal <%= index + 1 %></span>
+                        </div>
+                        <span class="text-[9px] font-mono text-neutral-600"><%= channelId %></span>
+                    </div>
+
+                    <div class="flex flex-col gap-2" id="filters-<%= channelId %>">
+                        <input type="text" id="filter-name-<%= channelId %>" placeholder="Buscar Nome ou ID..." class="input-filter" onkeyup="applyFilters('<%= channelId %>')">
+                        
+                        <div class="flex gap-2">
+                            <select id="filter-action-<%= channelId %>" class="select-filter" onchange="applyFilters('<%= channelId %>')">
+                                <option value="">Ação: Todas</option>
+                            </select>
+                            
+                            <select id="filter-item-<%= channelId %>" class="select-filter" onchange="applyFilters('<%= channelId %>')">
+                                <option value="">Item: Todos</option>
+                            </select>
+                        </div>
+                        
+                        <select id="filter-chest-<%= channelId %>" class="select-filter" onchange="applyFilters('<%= channelId %>')">
+                            <option value="">Baú: Todos</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="logs-container-<%= channelId %>" class="flex-1 overflow-y-auto custom-scroll p-4 space-y-3 relative">
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+                        <iconify-icon icon="solar:box-linear" class="text-6xl text-neutral-700"></iconify-icon>
+                    </div>
+                    </div>
+            </div>
+        <% }) %>
+
+        <% if (activeChannels.length === 0) { %>
+            <div class="col-span-full flex flex-col items-center justify-center glass p-12 text-center">
+                <iconify-icon icon="solar:danger-triangle-linear" class="text-4xl text-yellow-500 mb-4"></iconify-icon>
+                <h3 class="text-white font-medium">Nenhum canal configurado</h3>
+                <p class="text-neutral-500 text-xs mt-2 font-mono">Use o comando /config no Discord.</p>
+            </div>
+        <% } %>
+
+    </main>
+
+    <script>
+        const activeChannels = <%- JSON.stringify(activeChannels) %>;
+        let lastLogId = 0;
+
+        // Armazena valores únicos para preencher os selects
+        const filterOptions = {}; 
+        activeChannels.forEach(id => {
+            filterOptions[id] = { actions: new Set(), items: new Set(), chests: new Set() };
+        });
+
+        // Função Principal de Filtro
+        function applyFilters(channelId) {
+            const container = document.getElementById(`logs-container-${channelId}`);
+            if (!container) return;
+
+            const nameVal = document.getElementById(`filter-name-${channelId}`).value.toLowerCase();
+            const actionVal = document.getElementById(`filter-action-${channelId}`).value;
+            const itemVal = document.getElementById(`filter-item-${channelId}`).value;
+            const chestVal = document.getElementById(`filter-chest-${channelId}`).value;
+
+            const logs = container.querySelectorAll('.log-item');
+
+            logs.forEach(log => {
+                // Recupera dados dos atributos data- (que vamos adicionar ao criar o elemento)
+                const logName = log.dataset.name.toLowerCase();
+                const logId = log.dataset.id.toLowerCase();
+                const logAction = log.dataset.action;
+                const logItem = log.dataset.item;
+                const logChest = log.dataset.chest;
+
+                let visible = true;
+
+                // 1. Filtro Nome/ID
+                if (nameVal && !logName.includes(nameVal) && !logId.includes(nameVal)) visible = false;
+                
+                // 2. Filtro Ação
+                if (visible && actionVal && logAction !== actionVal) visible = false;
+
+                // 3. Filtro Item
+                if (visible && itemVal && logItem !== itemVal) visible = false;
+
+                // 4. Filtro Baú
+                if (visible && chestVal && logChest !== chestVal) visible = false;
+
+                log.style.display = visible ? 'block' : 'none';
+            });
+        }
+
+        // Função para atualizar as opções dos Selects dinamicamente
+        function updateFilterOptions(channelId, log) {
+            const opts = filterOptions[channelId];
+            if (!opts) return;
+
+            let changed = false;
+
+            // Adiciona se não existir
+            if (log.acao && !opts.actions.has(log.acao)) { opts.actions.add(log.acao); changed = true; }
+            if (log.item && !opts.items.has(log.item)) { opts.items.add(log.item); changed = true; }
+            if (log.bau && !opts.chests.has(log.bau)) { opts.chests.add(log.bau); changed = true; }
+
+            if (changed) {
+                populateSelect(`filter-action-${channelId}`, opts.actions, "Ação");
+                populateSelect(`filter-item-${channelId}`, opts.items, "Item");
+                populateSelect(`filter-chest-${channelId}`, opts.chests, "Baú");
+            }
+        }
+
+        function populateSelect(elementId, set, label) {
+            const select = document.getElementById(elementId);
+            const currentVal = select.value; // Mantém seleção atual
+            
+            // Limpa (mantendo o primeiro option padrão)
+            select.innerHTML = `<option value="">${label}: Todos</option>`;
+            
+            // Ordena alfabeticamente
+            const sorted = Array.from(set).sort();
+
+            sorted.forEach(val => {
+                const opt = document.createElement('option');
+                opt.value = val;
+                opt.innerText = val;
+                select.appendChild(opt);
+            });
+
+            select.value = currentVal; // Restaura seleção
+        }
+
+        async function fetchLogs() {
+            try {
+                const response = await fetch('/api/chest-logs');
+                const logs = await response.json();
+                
+                const newLogs = logs.filter(l => l.id > lastLogId);
+                
+                if (newLogs.length > 0) {
+                    lastLogId = newLogs[0].id; 
+                    
+                    // Inverte para processar do mais antigo para o mais novo (para o prepend funcionar na ordem visual correta)
+                    newLogs.reverse().forEach(log => {
+                        const containerId = `logs-container-${log.originChannelId}`;
+                        const container = document.getElementById(containerId);
+
+                        if (container) {
+                            // Atualiza opções dos filtros com os dados desse novo log
+                            updateFilterOptions(log.originChannelId, log);
+
+                            const html = createLogItem(log);
+                            container.insertAdjacentHTML('afterbegin', html);
+                            
+                            // Reaplica filtros para garantir que o novo item obedeça o filtro atual
+                            applyFilters(log.originChannelId);
+
+                            if (container.children.length > 100) { 
+                                const last = container.querySelector('.log-item:last-child');
+                                if(last) last.remove();
+                            }
+                        }
+                    });
+                }
+            } catch (e) { console.error("Erro logs", e); }
+        }
+
+        function createLogItem(log) {
+            const isDeposit = ['guardou', 'colocou', 'depositou'].some(v => log.acao.toLowerCase().includes(v));
+            const colorClass = isDeposit ? 'text-green-400' : 'text-red-400';
+            const icon = isDeposit ? 'solar:download-square-linear' : 'solar:upload-square-linear';
+            const dateStr = new Date(log.timestamp).toLocaleString('pt-BR');
+
+            // Adicionamos data-attributes para facilitar a filtragem
+            return `
+                <div class="log-item p-3 bg-white/[0.02] border border-white/5 rounded hover:bg-white/[0.04] transition-colors animate-in fade-in slide-in-from-top-2 duration-300"
+                     data-name="${log.nome}"
+                     data-id="${log.passaporte}"
+                     data-action="${log.acao}"
+                     data-item="${log.item}"
+                     data-chest="${log.bau}">
+                     
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="flex flex-col gap-1">
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-mono text-neutral-400 bg-white/5 px-1.5 rounded">#${log.passaporte}</span>
+                                <span class="text-[10px] font-bold text-white tracking-wide">${log.nome}</span>
+                            </div>
+                            <span class="text-[9px] font-mono text-neutral-600">${dateStr}</span>
+                        </div>
+                        <iconify-icon icon="${icon}" class="${colorClass} text-lg"></iconify-icon>
+                    </div>
+                    <div class="flex items-center gap-3 mt-1">
+                        <div class="flex-1">
+                            <p class="text-xs font-medium text-white leading-tight">${log.item}</p>
+                            <p class="text-[10px] text-neutral-500 mt-0.5 font-mono uppercase tracking-wide">
+                                <span class="${colorClass}">${log.acao}</span> • x${log.quantidade}
+                            </p>
+                            <p class="text-[9px] text-neutral-600 mt-1 font-mono bg-black/20 inline-block px-1 rounded">
+                                ${log.bau}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        setInterval(fetchLogs, 3000);
+        fetchLogs();
+    </script>
+</body>
+</html>

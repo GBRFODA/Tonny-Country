@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grind System | Elite Ranking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Manrope', sans-serif; background-color: #050505; color: #e5e5e5; overflow-x: hidden; }
+        .grid-bg { background-image: linear-gradient(to right, rgba(59,130,246,0.03) 1px, transparent 1px), linear-gradient(to bottom, rgba(59,130,246,0.03) 1px, transparent 1px); background-size: 40px 40px; }
+        .glass { background: rgba(8, 8, 8, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .beam-v { position: absolute; top: 0; bottom: 0; width: 1px; background: linear-gradient(to bottom, transparent, #3B82F6, transparent); opacity: 0.2; }
+        .animate-in { animation: fadeIn 0.6s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+        .text-glow { text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+    </style>
+</head>
+<body class="min-h-screen grid-bg p-4 lg:p-12">
+
+    <div class="max-w-[1200px] mx-auto relative">
+        <div class="beam-v left-0"></div>
+
+        <header class="flex justify-between items-center mb-12 animate-in">
+            <div class="flex items-center gap-6">
+                <a href="/" class="w-12 h-12 glass flex items-center justify-center hover:text-blue-500 hover:border-blue-500/30 transition-all group">
+                    <iconify-icon icon="solar:alt-arrow-left-linear" width="24" class="group-hover:-translate-x-1 transition-transform"></iconify-icon>
+                </a>
+                <div>
+                    <h1 class="font-mono text-[10px] tracking-[0.3em] text-neutral-500 uppercase">Ação/combate/h1>
+                    <p class="text-3xl font-light uppercase tracking-tighter">Ranking de <span class="text-blue-500">Elite</span></p>
+                </div>
+            </div>
+            <div class="text-right hidden md:block">
+                <p class="text-[10px] font-mono text-neutral-600 uppercase tracking-widest">Sincronização Ativa</p>
+                <p id="total-kills-display" class="text-xl font-light tracking-tight text-glow">-- Confirmações</p>
+            </div>
+        </header>
+
+        <main class="glass overflow-hidden relative shadow-2xl">
+            <div class="absolute inset-0 grid-bg opacity-10 pointer-events-none"></div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left relative z-10 border-collapse">
+                    <thead>
+                        <tr class="border-b border-white/5 bg-white/[0.02]">
+                            <th class="p-6 font-mono text-[10px] uppercase tracking-widest text-neutral-500">Posição</th>
+                            <th class="p-6 font-mono text-[10px] uppercase tracking-widest text-neutral-500">Operador</th>
+                            <th class="p-6 font-mono text-[10px] uppercase tracking-widest text-neutral-500 text-center">Confirmados (Kills)</th>
+                            <th class="p-6 font-mono text-[10px] uppercase tracking-widest text-neutral-500 text-center">Operações (Wins)</th>
+                            <th class="p-6 font-mono text-[10px] uppercase tracking-widest text-neutral-500 text-right">Status / Tempo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ranking-body" class="divide-y divide-white/5">
+                        <tr>
+                            <td colspan="5" class="p-20 text-center font-mono text-[10px] text-neutral-600 tracking-widest">
+                                CARREGANDO DADOS DE COMBATE...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+
+        <footer class="mt-8 flex justify-between items-center px-2">
+            <p class="text-[9px] font-mono text-neutral-700 uppercase tracking-widest">Cryptographic Link: Alpha-9</p>
+            <div class="flex items-center gap-4">
+                <span class="text-[9px] font-mono text-neutral-600 uppercase">Auto-Refresh Ativo</span>
+                <span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        async function updateRanking() {
+            try {
+                // 1. Busca os dados de quem está ONLINE (para calcular o tempo atual)
+                const responseLive = await fetch('/api/live-data');
+                const dataLive = await responseLive.json();
+                const onlineMap = new Map();
+                
+                // Cria um mapa rápido de quem está online: ID -> Timestamp de Inicio
+                if (dataLive.pontosAtivos) {
+                    dataLive.pontosAtivos.forEach(p => onlineMap.set(p.discordId, p.startTime));
+                }
+
+                // Atualiza o total de kills no header
+                if (dataLive.metrics) {
+                    document.getElementById('total-kills-display').innerText = `${dataLive.metrics.totalKills || 0} Confirmações`;
+                }
+
+                // 2. Busca o RANKING REAL (Kills, Wins, etc)
+                const responseRank = await fetch('/api/ranking');
+                const dataRank = await responseRank.json();
+
+                // 3. Renderiza a Tabela
+                if (dataRank.length > 0) {
+                    const rankingHtml = dataRank.map((user, index) => {
+                        // Verifica se este usuário do ranking está online agora
+                        const isOnline = onlineMap.has(user.discordId);
+                        const startTime = onlineMap.get(user.discordId);
+                        
+                        // Define o HTML do Status (Online com timer ou Offline)
+                        let statusHtml = `<span class="text-neutral-600 text-[10px]">OFFLINE</span>`;
+                        
+                        if (isOnline) {
+                            statusHtml = `
+                                <div class="inline-flex items-center gap-2 px-3 py-1 glass rounded-none text-[9px] font-mono text-blue-500 uppercase tracking-widest">
+                                    <span class="w-1 h-1 bg-blue-500 rounded-full animate-pulse"></span>
+                                    EM SERVIÇO: <span data-timer="${startTime}">00:00:00</span>
+                                </div>
+                            `;
+                        }
+
+                        // Medalhas para Top 3
+                        let posColor = 'text-neutral-600';
+                        if (index === 0) posColor = 'text-yellow-500 text-glow';
+                        else if (index === 1) posColor = 'text-gray-300';
+                        else if (index === 2) posColor = 'text-orange-600';
+
+                        return `
+                        <tr class="hover:bg-blue-500/[0.03] transition-colors group animate-in">
+                            <td class="p-6">
+                                <span class="font-mono text-sm ${posColor} font-bold">
+                                    #${(index + 1).toString().padStart(2, '0')}
+                                </span>
+                            </td>
+                            <td class="p-6">
+                                <div class="flex items-center gap-4">
+                                    <div class="relative">
+                                        <img src="${user.avatarURL || 'https://cdn.discordapp.com/embed/avatars/0.png'}" class="w-10 h-10 rounded-none border border-white/10 group-hover:border-blue-500/50 transition-all">
+                                        ${isOnline ? '<div class="absolute -bottom-1 -right-1 w-3 h-3 bg-blue-600 border-2 border-[#050505]"></div>' : ''}
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">@${user.username || 'Desconhecido'}</p>
+                                        <p class="text-[9px] text-neutral-600 font-mono tracking-tighter">ID: ${user.discordId}</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="p-6 text-center font-mono text-sm text-white font-bold tracking-wider">
+                                ${user.kills || 0}
+                            </td>
+                            <td class="p-6 text-center font-mono text-sm text-neutral-400">
+                                <span class="text-green-500">${user.vitorias || 0}</span> / <span class="text-red-500">${user.derrotas || 0}</span>
+                            </td>
+                            <td class="p-6 text-right">
+                                ${statusHtml}
+                            </td>
+                        </tr>
+                        `;
+                    }).join('');
+
+                    document.getElementById('ranking-body').innerHTML = rankingHtml;
+                } else {
+                    document.getElementById('ranking-body').innerHTML = `
+                        <tr><td colspan="5" class="p-20 text-center font-mono text-[10px] text-neutral-600 uppercase">Nenhum registro encontrado no banco de dados.</td></tr>
+                    `;
+                }
+
+            } catch (err) {
+                console.error("Erro no Ranking:", err);
+            }
+        }
+
+        // Função para rodar os timers (contadores de tempo)
+        setInterval(() => { 
+            document.querySelectorAll('[data-timer]').forEach(el => { 
+                const startTime = parseInt(el.dataset.timer);
+                if (!isNaN(startTime)) {
+                    const diff = Math.floor(Date.now() / 1000) - startTime; 
+                    // Formata para HH:MM:SS
+                    const hours = Math.floor(diff / 3600);
+                    const minutes = Math.floor((diff % 3600) / 60);
+                    const seconds = diff % 60;
+                    el.innerText = 
+                        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                }
+            }); 
+        }, 1000);
+
+        // Atualiza os dados a cada 10 segundos
+        setInterval(updateRanking, 10000);
+        updateRanking();
+    </script>
+</body>
+</html>
