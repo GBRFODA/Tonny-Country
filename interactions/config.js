@@ -40,7 +40,7 @@ module.exports = {
                         { label: 'Sistema de Ponto', value: 'cfg_cat_ponto', emoji: '⏰', description: 'Logs de entrada e saída.' },
                         { label: 'Sistema de Vendas', value: 'cfg_cat_vendas', emoji: '💰', description: 'Produtos, porcentagens e logs.' },
                         { label: 'Sistema de Ações', value: 'cfg_cat_acoes', emoji: '⚔️', description: 'Anúncios de PVP e resultados.' },
-                        { label: 'Sistema de Farm', value: 'cfg_cat_farm', emoji: '🌾', description: 'Metas de farm e validação.' },
+                        { label: 'Sistema de Farm', value: 'cfg_cat_farm', emoji: '🌾', description: 'Metas de farm, Logs e Validação.' },
                         { label: 'Monitoramento (Baús)', value: 'cfg_cat_monitor', emoji: '📦', description: 'Canais de logs de baú.' },
                         { label: 'Avisos de Baú', value: 'cfg_cat_avisos', emoji: '🚨', description: 'Blacklist, limites e alertas.' },
                         { label: 'Logs Gerais', value: 'cfg_cat_logs', emoji: '📜', description: 'Msg, Voz, Membros e Moderação.' },
@@ -132,6 +132,7 @@ module.exports = {
 
         const renderMenuFarm = () => {
             const roleId = db.getConfig('farm_role_approver');
+            const logChannel = db.getConfig('channel_logs_farm'); // [NOVO] Canal de logs
             const metaPeriod = db.getConfig('farm_meta_period') || "Não definido";
             const metas = db.listarMetasFarm();
             
@@ -142,11 +143,15 @@ module.exports = {
             const embed = new EmbedBuilder().setTitle('🌾 Sistema de Farm').setColor(0xB87333)
                 .addFields(
                     { name: 'Cargo Aprovador', value: roleId ? `<@&${roleId}>` : "`Off`", inline: true },
+                    { name: 'Canal Logs', value: logChannel ? `<#${logChannel}>` : "`Off`", inline: true }, // [NOVO]
                     { name: 'Período', value: metaPeriod, inline: true },
                     { name: 'Metas', value: metasTexto, inline: false }
                 );
 
             const row1 = new ActionRowBuilder().addComponents(new RoleSelectMenuBuilder().setCustomId('cfg_select_farm_role').setPlaceholder('Cargo Aprovador'));
+            // [NOVO] Adicionado seletor de canal de logs
+            const rowLogs = new ActionRowBuilder().addComponents(new ChannelSelectMenuBuilder().setCustomId('cfg_set_farm_channel').setPlaceholder('Canal de Logs de Farm').setChannelTypes(ChannelType.GuildText));
+            
             const row2 = new ActionRowBuilder().addComponents(new StringSelectMenuBuilder().setCustomId('cfg_select_farm_period').setPlaceholder('Período da Meta').addOptions([
                 { label: 'Meta Diária', value: 'Meta Diária', emoji: '📅' }, { label: 'Meta Semanal', value: 'Meta Semanal', emoji: '🗓️' }, { label: 'Meta Mensal', value: 'Meta Mensal', emoji: '📆' }
             ]));
@@ -156,7 +161,7 @@ module.exports = {
                 new ButtonBuilder().setCustomId('cfg_home').setLabel('Voltar').setStyle(ButtonStyle.Secondary).setEmoji('↩️')
             );
 
-            return { embeds: [embed], components: [row1, row2, row3] };
+            return { embeds: [embed], components: [row1, rowLogs, row2, row3] };
         };
 
         const renderMenuAcoes = () => {
@@ -372,7 +377,10 @@ module.exports = {
             if (interaction.customId === 'cfg_select_canal_reg') { db.setConfig('channel_aprovacao', interaction.values[0]); return await interaction.update(renderMenuRegistro()); }
             if (interaction.customId === 'cfg_select_role_reg') { db.setConfig('role_aprovacao', interaction.values[0]); return await interaction.update(renderMenuRegistro()); }
             if (interaction.customId === 'cfg_select_logs_ponto') { db.setConfig('channel_ponto', interaction.values[0]); return await interaction.update(renderMenuPonto()); }
+            
+            // --- MODIFICAÇÕES DE FARM (INTEGRADAS) ---
             if (interaction.customId === 'cfg_select_farm_role') { db.setConfig('farm_role_approver', interaction.values[0]); return await interaction.update(renderMenuFarm()); }
+            if (interaction.customId === 'cfg_set_farm_channel') { db.setConfig('channel_logs_farm', interaction.values[0]); return await interaction.update(renderMenuFarm()); } // [NOVO] Salva canal
             if (interaction.customId === 'cfg_select_farm_rem_exec') { db.removerMetaFarm(parseInt(interaction.values[0])); return await interaction.update(renderMenuFarm()); }
             if (interaction.customId === 'cfg_select_farm_period') { db.setConfig('farm_meta_period', interaction.values[0]); return await interaction.update(renderMenuFarm()); }
         }
